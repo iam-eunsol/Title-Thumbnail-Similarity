@@ -16,13 +16,8 @@ st.set_page_config(layout="wide", page_title="Video Selection Study")
 st.markdown("""
 <style>
     /* --- HIDE STREAMLIT UI ELEMENTS --- */
-    /* Hide the main header (hamburger menu, 'Running' animation, etc.) */
-    header[data-testid="stHeader"] {
-        display: none;
-    }
-    /* Hide the 'Deploy' or 'Share' button specific to Streamlit Cloud */
-    .stAppDeployButton {
-        display: none;
+    [class^="_linkOutText"] {
+        display: none !important;
     }
     
     /* --- EXISTING LAYOUT FIXES --- */
