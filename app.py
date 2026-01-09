@@ -13,7 +13,8 @@ import time
 
 st.set_page_config(layout="wide", page_title="Video Selection Study")
 
-# --- CUSTOM CSS (RESPONSIVE LAYOUT) ---
+# --- CUSTOM CSS (Main App Only) ---
+# This styling applies to the general Streamlit page (hiding header, button styles, etc.)
 st.markdown("""
 <style>
     /* 1. HIDE STREAMLIT UI */
@@ -21,93 +22,27 @@ st.markdown("""
         display: none !important;
     }
     
-    /* 2. MAIN CONTAINER */
+    /* 2. MAIN CONTAINER ADJUSTMENTS */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 5rem;
-        max-width: 1000px; /* Wider on PC */
+        max-width: 1000px; /* Max width for the PC view */
         margin: 0 auto;
     }
 
-    /* 3. RESPONSIVE VIDEO CARD CLASS */
-    .video-card {
-        display: flex;
-        flex-direction: row; /* Default: Side-by-Side (PC) */
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 24px;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
-    .video-card:hover {
-        background-color: #f9f9f9;
-    }
-
-    .video-thumbnail-container {
-        flex: 0 0 360px; /* Fixed width on PC */
-        position: relative;
-    }
-
-    .video-info {
-        flex: 1;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-    }
+    /* 3. PROGRESS BAR & BUTTONS */
+    .stProgress > div > div > div > div { background-color: #cc0000; }
     
-    .video-profile-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
+    .stButton button {
+        background-color: #cc0000; color: white; border: none;
+        border-radius: 2px; font-weight: 500; padding: 0.5rem 1rem;
     }
-
-    /* --- MOBILE STYLES (Screen width < 768px) --- */
-    @media (max-width: 768px) {
-        .video-card {
-            flex-direction: column !important; /* Force Stacked */
-            max-width: 100%;
-        }
-
-        .video-thumbnail-container {
-            flex: none;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-        }
-        
-        .video-thumbnail-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .video-info {
-            padding: 12px;
-        }
+    .stButton button:hover {
+        background-color: #ff0000; color: white;
     }
 
     /* TYPOGRAPHY */
     h1, h2, h3, p, div { font-family: 'Roboto', Arial, sans-serif; }
-    
-    /* UTILS */
-    .duration-badge {
-        position: absolute; bottom: 8px; right: 8px;
-        background-color: rgba(0, 0, 0, 0.8); color: white;
-        padding: 2px 6px; font-size: 0.75rem; border-radius: 4px;
-    }
-    .video-label {
-        position: absolute; top: 8px; left: 8px;
-        background-color: rgba(0, 0, 0, 0.8); color: white;
-        padding: 2px 8px; font-size: 0.80rem; border-radius: 4px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -260,7 +195,7 @@ with col2:
 st.caption("YouTube is a trademark of Google LLC. Used here for educational purposes only.")
 st.markdown("---")
 
-# --- RESPONSIVE VIDEO SELECTOR ---
+# --- VIDEO SELECTOR (RESPONSIVE) ---
 def video_selector():
     current_selection = st.session_state.selections.get(current_page_number, "")
 
@@ -277,34 +212,140 @@ def video_selector():
     else:
         st.info("Click on a thumbnail below to select it.")
 
-    html = ""
+    # --- HTML & CSS CONSTRUCTION ---
+    # We define the CSS *inside* the HTML string so it works inside the click_detector iframe
+    html = """
+    <style>
+        /* Base Card Style */
+        .video-card {
+            display: flex;
+            flex-direction: row; /* Default: Side-by-Side (PC) */
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-family: 'Roboto', Arial, sans-serif;
+            text-decoration: none;
+            color: inherit;
+            width: 100%;
+        }
+
+        .video-card:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* Container for the image */
+        .video-thumbnail-container {
+            flex: 0 0 360px; /* Fixed width for thumbnail on PC */
+            position: relative;
+        }
+
+        .video-thumbnail-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Container for text info */
+        .video-info {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-title {
+            margin: 0 0 8px 0; 
+            font-size: 1.1rem; 
+            font-weight: 500; 
+            color: #0f0f0f; 
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        /* --- MOBILE STYLES (< 700px) --- */
+        @media (max-width: 700px) {
+            .video-card {
+                flex-direction: column !important; /* Stack Vertical */
+            }
+
+            .video-thumbnail-container {
+                flex: none;
+                width: 100%;
+                /* 16:9 Aspect Ratio hack */
+                padding-top: 56.25%; 
+                height: 0;
+            }
+            
+            .video-thumbnail-img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+            
+            .video-info {
+                padding: 12px;
+            }
+            
+            /* Smaller font on mobile */
+            .video-title {
+                font-size: 1rem;
+            }
+        }
+
+        /* UTILS */
+        .badge {
+            position: absolute; 
+            background-color: rgba(0, 0, 0, 0.8); 
+            color: white;
+            border-radius: 4px;
+            font-family: sans-serif;
+        }
+        .duration-badge { bottom: 8px; right: 8px; padding: 2px 6px; font-size: 0.75rem; }
+        .label-badge { top: 8px; left: 8px; padding: 2px 8px; font-size: 0.80rem; }
+    </style>
+    """
+
     for idx, v in enumerate(page_videos, start=1):
         label = f"Video {idx}"
         selected = v["id"] == current_selection
         thumb_src = get_thumbnail_src(v, current_assignment)
 
-        # Dynamic Styles based on selection
+        # Dynamic Styles for Selection
         if selected:
-            card_style = "border: 2px solid #cc0000; box-shadow: 0 4px 12px rgba(204,0,0,0.25); background-color: #fff0f0;"
+            card_extra_style = "border: 2px solid #cc0000; box-shadow: 0 4px 12px rgba(204,0,0,0.25); background-color: #fff0f0;"
         else:
-            card_style = ""
+            card_extra_style = ""
 
+        # Using <a> tag wrapper so the whole card is clickable via st_click_detector
         html += f"""
-        <div class="video-card" style="{card_style}">
+        <a href="javascript:;" id='{v["id"]}' class="video-card" style="{card_extra_style}">
             
-            <a href="javascript:;" id='{v["id"]}' class="video-thumbnail-container" style="display: block;">
-                <img src='{thumb_src}' class="video-thumbnail-img" 
-                     style='width: 100%; height: auto; display: block;' />
-                
-                <div class="video-label">{label}</div>
-                <div class="duration-badge">{v["duration"]}</div>
-            </a>
+            <div class="video-thumbnail-container">
+                <img src='{thumb_src}' class="video-thumbnail-img" />
+                <div class="badge label-badge">{label}</div>
+                <div class="badge duration-badge">{v["duration"]}</div>
+            </div>
 
             <div class="video-info">
-                <h4 style='
-                    margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 500; color: #0f0f0f; 
-                    line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-                '>{v["title"]}</h4>
+                <div class="video-title">{v["title"]}</div>
                 
                 <div class="video-profile-row">
                      <img src='{v["profile"]}' style='width: 24px; height: 24px; border-radius: 50%;' />
@@ -315,17 +356,18 @@ def video_selector():
                     {v["views"]} • {v["years"]}
                 </div>
             </div>
-        </div>
+        </a>
         """
 
     html += f"<div style='display:none;'>{time.time()}</div>"
 
+    # Explicit Clear to prevent ghosting
     placeholder = st.empty()
     placeholder.empty()
     
     with placeholder.container():
         click = click_detector(f"""
-            <div style='width: 100%;'>
+            <div style='width: 100%; display: flex; flex-direction: column;'>
                 {html}
             </div>
         """, key=f"resp_key_{current_page_number}")
