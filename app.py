@@ -16,7 +16,7 @@ st.set_page_config(layout="wide", page_title="Video Selection Study")
 st.markdown("""
 <style>
     /* --- HIDE STREAMLIT UI ELEMENTS --- */
-    [class^="_linkOutText"] {
+    [class="_container_1upux_1"] {
         display: none !important;
     }
     
