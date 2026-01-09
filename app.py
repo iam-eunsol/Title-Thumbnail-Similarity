@@ -21,11 +21,11 @@ st.markdown("""
     }
     
     /* --- EXISTING LAYOUT FIXES --- */
-    /* Fix Top Cutoff: Adjust padding since header is now gone */
     .block-container {
-        padding-top: 2rem; /* Reduced from 4rem since header is hidden */
+        padding-top: 2rem;
         padding-bottom: 5rem;
-        max-width: 1000px;
+        max-width: 600px; /* Reduced max-width to look more like a mobile feed */
+        margin: 0 auto;
     }
     
     /* Progress bar styling */
@@ -54,7 +54,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURATION ---
-# REPLACE WITH YOUR GOOGLE APPS SCRIPT URL
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbzHUUlpdy7B4vZF7lTlBUyJBRScRN_j3PHvGSXH2n_yeTDOCKvBoV4SbLhqNl05yvEO/exec"
 
 # --- LOAD VIDEO METADATA ---
@@ -206,7 +205,7 @@ with col2:
 st.caption("YouTube is a trademark of Google LLC. Used here for educational purposes only.")
 st.markdown("---")
 
-# --- VIDEO SELECTOR ---
+# --- VIDEO SELECTOR (STACKED LAYOUT) ---
 def video_selector():
     current_selection = st.session_state.selections.get(current_page_number, "")
 
@@ -233,104 +232,27 @@ def video_selector():
         # --- STYLING LOGIC ---
         if selected:
             # Highlighted Style
-            bg_color = "#fff0f0" # Very light red background
+            bg_color = "#fff0f0" 
             css_border = "2px solid #cc0000"
-            css_shadow = "0 4px 12px rgba(204,0,0,0.25)" # Deeper red shadow
+            css_shadow = "0 4px 12px rgba(204,0,0,0.25)" 
         else:
             # Default Style
             bg_color = "#ffffff"
-            css_border = "2px solid transparent"
-            css_shadow = "0 2px 5px rgba(0,0,0,0.08)" # Soft grey shadow
+            css_border = "1px solid #e0e0e0" # Thinner grey border for unselected
+            css_shadow = "0 2px 5px rgba(0,0,0,0.05)" 
 
         thumb_src = get_thumbnail_src(v, current_assignment)
 
+        # CHANGED: Structure is now STACKED (Thumbnail Top, Details Bottom)
         html += f"""
         <div style='
             background-color: {bg_color};
             width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: row;
-            gap: 16px;
-            padding: 12px 0;
             margin-bottom: 24px;
-            align-items: flex-start;
             box-shadow: {css_shadow};
             border: {css_border};
-            border-radius: 8px;
+            border-radius: 12px;
+            overflow: hidden; /* Important for rounding image corners */
+            cursor: pointer;
             transition: all 0.2s ease-in-out;
         '>
-            <a href="javascript:;" id='{v["id"]}' style='flex: 2; position: relative; display: block;'>
-                <img src='{thumb_src}'
-                     style='width: 100%; height: auto; border-radius: 6px; margin-left: 12px;' />
-                <div style='
-                    position: absolute;
-                    top: 8px;
-                    left: 20px;
-                    background-color: rgba(0, 0, 0, 0.75);
-                    color: white;
-                    padding: 2px 8px;
-                    font-size: 0.80rem;
-                    border-radius: 4px;
-                    font-family: sans-serif;
-                '>{label}</div>
-                <div style='
-                    position: absolute;
-                    bottom: 8px;
-                    right: 8px;
-                    background-color: rgba(0, 0, 0, 0.75);
-                    color: white;
-                    padding: 2px 6px;
-                    font-size: 0.75rem;
-                    border-radius: 4px;
-                    font-family: sans-serif;
-                '>{v["duration"]}</div>
-            </a>
-            <div style='flex: 3; display: flex; flex-direction: column; justify-content: flex-start; padding-right: 12px;'>
-                <h4 style='margin: 0 0 4px 0; font-size: 1.3rem; font-weight: 600;'>{v["title"]}</h4>
-                <p style='margin: 2px 0 10px 0; color: #777; font-size: 0.85rem;'>{v["views"]} • {v["years"]}</p>
-                <div style='display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #555; margin-top: 6px;'>
-                    <img src='{v["profile"]}' style='width: 28px; height: 28px; border-radius: 50%;' alt='channel icon' />
-                    <span>{v["channel"]}</span>
-                </div>
-            </div>
-        </div>
-        """
-
-    # 3. RENDER CLICK DETECTOR
-    # Key includes selection to force refresh (prevents duplicate sets)
-    click = click_detector(f"""
-        <div style='display: flex; flex-direction: column; align-items: flex-start;'>
-            {html}
-        </div>
-    """, key=f"video_click_page_{current_page_number}_{current_selection}")
-
-    if click and click != current_selection:
-        st.session_state.selections[current_page_number] = click
-        st.rerun()
-
-# Render selector
-video_selector()
-
-# --- FOOTER ---
-st.markdown("<br>", unsafe_allow_html=True)
-col_l, col_r = st.columns([4, 1])
-
-with col_r:
-    if st.button("Continue", use_container_width=True):
-        current_selection = st.session_state.selections.get(current_page_number, "")
-        
-        if not current_selection:
-            st.toast("⚠️ Please select a video first.", icon="⚠️")
-        else:
-            selected_video = next((v for v in page_videos if v["id"] == current_selection), None)
-            if selected_video and current_page_number not in st.session_state.logged_pages:
-                log_choice(participant_id, current_page_number, selected_video)
-                st.session_state.logged_pages.add(current_page_number)
-            
-            if st.session_state.page_index < total_pages - 1:
-                st.session_state.page_index += 1
-                st.rerun()
-            else:
-                st.success("🎉 You have completed the study!")
-                st.balloons()
