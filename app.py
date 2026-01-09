@@ -12,12 +12,23 @@ from pathlib import Path
 
 st.set_page_config(layout="wide", page_title="Video Selection Study")
 
-# --- CUSTOM CSS (Layout Fixes) ---
+# --- CUSTOM CSS (Layout & Hiding Buttons) ---
 st.markdown("""
 <style>
-    /* Fix Top Cutoff: Increase top padding */
+    /* --- HIDE STREAMLIT UI ELEMENTS --- */
+    /* Hide the main header (hamburger menu, 'Running' animation, etc.) */
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+    /* Hide the 'Deploy' or 'Share' button specific to Streamlit Cloud */
+    .stAppDeployButton {
+        display: none;
+    }
+    
+    /* --- EXISTING LAYOUT FIXES --- */
+    /* Fix Top Cutoff: Adjust padding since header is now gone */
     .block-container {
-        padding-top: 4rem;
+        padding-top: 2rem; /* Reduced from 4rem since header is hidden */
         padding-bottom: 5rem;
         max-width: 1000px;
     }
