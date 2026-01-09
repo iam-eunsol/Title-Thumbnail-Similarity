@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_javascript import st_javascript
 from st_click_detector import click_detector
 import os
 import json
@@ -67,8 +68,33 @@ total_pages = len(pages)
 
 # --- GET PARTICIPANT ID ---
 params = st.query_params
-raw_pid = params.get("pid", None)
-participant_id = raw_pid[0] if isinstance(raw_pid, list) else str(raw_pid) if raw_pid else "unknown"
+url_pid = params.get("pid", None)
+
+# Handle list vs string
+if isinstance(url_pid, list):
+    url_pid = url_pid[0]
+
+# 2. Key for local storage
+LS_KEY = "youtube_study_pid"
+
+if url_pid:
+    # CASE A: We have a PID in the URL (e.g., inside Qualtrics)
+    participant_id = str(url_pid)
+    
+    # Save it to browser memory for later
+    st_javascript(f"localStorage.setItem('{LS_KEY}', '{participant_id}')")
+
+else:
+    # CASE B: No PID in URL (e.g., opened in new tab without params)
+    # Try to retrieve from browser memory
+    cached_pid = st_javascript(f"localStorage.getItem('{LS_KEY}')")
+    
+    if cached_pid:
+        participant_id = str(cached_pid)
+        # Optional: Add it back to the URL for visual confirmation
+        st.query_params["pid"] = participant_id
+    else:
+        participant_id = "unknown"
 
 # --- THUMBNAIL HANDLING ---
 THUMBNAIL_DIR = Path("thumbnails")
